@@ -70,6 +70,26 @@ env = SConscript("godot-cpp/SConstruct", {"env": env, "customs": customs})
 env.Append(CPPDEFINES=["SPINE_GODOT_EXTENSION"])
 env.Append(CPPPATH=["spine_godot", "spine_godot/spine-cpp/include"])
 
+if env["platform"] == "windows":
+    env.Append(CCFLAGS=["/O2", "/Gy"])
+    env.Append(LINKFLAGS=["/OPT:REF", "/OPT:ICF"])
+
+if env["platform"] == "android":
+    env.Append(CCFLAGS=[
+        "-Oz",
+        "-ffunction-sections",
+        "-fdata-sections",
+        "-fvisibility=hidden",
+        "-fvisibility-inlines-hidden",
+        "-flto=thin"
+    ])
+
+    env.Append(LINKFLAGS=[
+        "-Wl,--gc-sections",
+        "-Wl,--strip-all",
+        "-flto=thin"
+    ])
+
 # Set iOS minimum deployment target
 if env["platform"] == "ios":
     env.Append(CCFLAGS=["-miphoneos-version-min=12.0"])
