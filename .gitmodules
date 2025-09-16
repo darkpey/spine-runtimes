@@ -1,4 +1,4 @@
 [submodule "spine-godot/godot-cpp"]
 	path = spine-godot/godot-cpp
 	url = https://github.com/godotengine/godot-cpp
-	branch = 4.4
+	branch = 4.5
