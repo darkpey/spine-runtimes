@@ -25,12 +25,11 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THE SPINE RUNTIMES, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *****************************************************************************/
+*****************************************************************************/
 
 package spine;
 
-import lime.math.Rectangle;
-import haxe.ds.StringMap;
+import spine.Rectangle;
 import spine.attachments.Attachment;
 import spine.attachments.ClippingAttachment;
 import spine.attachments.MeshAttachment;
@@ -43,20 +42,27 @@ import spine.attachments.RegionAttachment;
  */
 class Skeleton {
 	private static var quadTriangles:Array<Int> = [0, 1, 2, 2, 3, 0];
+
 	private var _data:SkeletonData;
 
 	/** The skeleton's bones, sorted parent first. The root bone is always the first bone. */
 	public var bones:Array<Bone>;
+
 	/** The skeleton's slots. */
 	public var slots:Array<Slot>; // Setup pose draw order.
+
 	/** The skeleton's slots in the order they should be drawn. The returned array may be modified to change the draw order. */
 	public var drawOrder:Array<Slot>;
+
 	/** The skeleton's IK constraints. */
 	public var ikConstraints:Array<IkConstraint>;
+
 	/** The skeleton's transform constraints. */
 	public var transformConstraints:Array<TransformConstraint>;
+
 	/** The skeleton's path constraints. */
 	public var pathConstraints:Array<PathConstraint>;
+
 	/** The skeleton's physics constraints. */
 	public var physicsConstraints:Array<PhysicsConstraint>;
 
@@ -65,6 +71,7 @@ class Skeleton {
 
 	/** The color to tint all the skeleton's attachments. */
 	public var color:Color = new Color(1, 1, 1, 1);
+
 	/** Scales the entire skeleton on the X axis.
 	 *
 	 * Bones that do not inherit scale are still affected by this property. */
@@ -74,6 +81,7 @@ class Skeleton {
 	 *
 	 * Bones that do not inherit scale are still affected by this property. */
 	public var scaleY(get, default):Float = 1;
+
 	function get_scaleY() {
 		return Bone.yDown ? -scaleY : scaleY;
 	}
@@ -82,10 +90,12 @@ class Skeleton {
 	 *
 	 * Bones that do not inherit translation are still affected by this property. */
 	public var x:Float = 0;
+
 	/** Sets the skeleton Y position, which is added to the root bone worldY position.
 	 *
 	 * Bones that do not inherit translation are still affected by this property. */
 	public var y:Float = 0;
+
 	/** Returns the skeleton's time. This is used for time-based manipulations, such as spine.PhysicsConstraint.
 	 *
 	 * See Skeleton.update(). */
@@ -317,7 +327,7 @@ class Skeleton {
 	}
 
 	private function sortPathConstraintAttachment(skin:Skin, slotIndex:Int, slotBone:Bone):Void {
-		var dict:StringMap<Attachment> = skin.attachments[slotIndex];
+		var dict = skin.attachments[slotIndex];
 		if (dict != null) {
 			for (attachment in dict.keyValueIterator()) {
 				sortPathConstraintAttachment2(attachment.value, slotBone);
@@ -345,10 +355,12 @@ class Skeleton {
 		}
 	}
 
-	private function sortPhysicsConstraint (constraint: PhysicsConstraint) {
+	private function sortPhysicsConstraint(constraint:PhysicsConstraint) {
 		var bone:Bone = constraint.bone;
-		constraint.active = bone.active && (!constraint.data.skinRequired || (skin != null && contains(skin.constraints, constraint.data)));
-		if (!constraint.active) return;
+		constraint.active = bone.active
+			&& (!constraint.data.skinRequired || (skin != null && contains(skin.constraints, constraint.data)));
+		if (!constraint.active)
+			return;
 
 		sortBone(bone);
 
@@ -383,7 +395,8 @@ class Skeleton {
 	 * @see https://esotericsoftware.com/spine-runtime-skeletons#World-transforms World transforms in the Spine Runtimes Guide
 	 */
 	public function updateWorldTransform(physics:Physics):Void {
-		if (physics == null) throw new SpineException("physics is undefined");
+		if (physics == null)
+			throw new SpineException("physics is undefined");
 		for (bone in bones) {
 			bone.ax = bone.x;
 			bone.ay = bone.y;
@@ -440,11 +453,16 @@ class Skeleton {
 
 	/** Sets the bones and constraints to their setup pose values. */
 	public function setBonesToSetupPose():Void {
-		for (bone in this.bones) bone.setToSetupPose();
-		for (constraint in this.ikConstraints) constraint.setToSetupPose();
-		for (constraint in this.transformConstraints) constraint.setToSetupPose();
-		for (constraint in this.pathConstraints) constraint.setToSetupPose();
-		for (constraint in this.physicsConstraints) constraint.setToSetupPose();
+		for (bone in this.bones)
+			bone.setToSetupPose();
+		for (constraint in this.ikConstraints)
+			constraint.setToSetupPose();
+		for (constraint in this.transformConstraints)
+			constraint.setToSetupPose();
+		for (constraint in this.pathConstraints)
+			constraint.setToSetupPose();
+		for (constraint in this.physicsConstraints)
+			constraint.setToSetupPose();
 	}
 
 	/** Sets the slots and draw order to their setup pose values. */
@@ -686,7 +704,7 @@ class Skeleton {
 
 	/** Returns the axis aligned bounding box (AABB) of the region and mesh attachments for the current pose. Optionally applies
 	 * clipping. */
-	public function getBounds(clipper: SkeletonClipping = null):Rectangle {
+	public function getBounds(clipper:SkeletonClipping = null):Rectangle {
 		var minX:Float = Math.POSITIVE_INFINITY;
 		var minY:Float = Math.POSITIVE_INFINITY;
 		var maxX:Float = Math.NEGATIVE_INFINITY;
@@ -732,9 +750,11 @@ class Skeleton {
 					ii += 2;
 				}
 			}
-			if (clipper != null) clipper.clipEndWithSlot(slot);
+			if (clipper != null)
+				clipper.clipEndWithSlot(slot);
 		}
-		if (clipper != null) clipper.clipEnd();
+		if (clipper != null)
+			clipper.clipEnd();
 		_bounds.x = minX;
 		_bounds.y = minY;
 		_bounds.width = maxX - minX;
@@ -743,18 +763,18 @@ class Skeleton {
 	}
 
 	/** Increments the skeleton's Skeleton.time. */
-	public function update (delta:Float):Void {
+	public function update(delta:Float):Void {
 		time += delta;
 	}
 
 	/** Calls spine.PhysicsConstraint.translate() for each physics constraint. */
-	public function physicsTranslate (x:Float, y:Float):Void {
+	public function physicsTranslate(x:Float, y:Float):Void {
 		for (physicsConstraint in physicsConstraints)
 			physicsConstraint.translate(x, y);
 	}
 
 	/** Calls spine.PhysicsConstraint.rotate() for each physics constraint. */
-	public function physicsRotate (x:Float, y:Float, degrees:Float):Void {
+	public function physicsRotate(x:Float, y:Float, degrees:Float):Void {
 		for (physicsConstraint in physicsConstraints)
 			physicsConstraint.rotate(x, y, degrees);
 	}

@@ -44,8 +44,13 @@
 #include <godot_cpp/classes/editor_property.hpp>
 #else
 #include "editor/editor_node.h"
+#if (VERSION_MAJOR >= 4 && VERSION_MINOR >= 5)
+#include "editor/inspector/editor_properties.h"
+#include "editor/inspector/editor_properties_array_dict.h"
+#else
 #include "editor/editor_properties.h"
 #include "editor/editor_properties_array_dict.h"
+#endif
 #endif
 
 class SpineAtlasResourceImportPlugin : public EditorImportPlugin {
@@ -282,11 +287,20 @@ class SpineEditorPlugin : public EditorPlugin {
 
 	static void _bind_methods() {}
 
+#ifdef SPINE_GODOT_EXTENSION
+	Ref<EditorImportPlugin> atlas_import_plugin;
+	Ref<EditorImportPlugin> json_import_plugin;
+	Ref<EditorImportPlugin> binary_import_plugin;
+	Ref<EditorInspectorPlugin> skeleton_data_inspector_plugin;
+#endif
+
 public:
 #ifdef SPINE_GODOT_EXTENSION
 	explicit SpineEditorPlugin();
 
 	String _get_plugin_name() const override { return "SpineEditorPlugin"; }
+
+	void _notification(int p_what);
 #else
 	explicit SpineEditorPlugin(EditorNode *node);
 

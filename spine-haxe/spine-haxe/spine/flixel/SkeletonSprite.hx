@@ -25,7 +25,7 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THE SPINE RUNTIMES, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *****************************************************************************/
+*****************************************************************************/
 
 package spine.flixel;
 
@@ -63,13 +63,13 @@ import spine.attachments.ClippingAttachment;
 import spine.flixel.SkeletonMesh;
 
 /** A FlxObject that draws a skeleton. The animation state and skeleton must be updated each frame. */
-class SkeletonSprite extends FlxObject
-{
+class SkeletonSprite extends FlxObject {
 	public var skeleton(default, null):Skeleton;
 	public var state(default, null):AnimationState;
 	public var stateData(default, null):AnimationStateData;
-	public var beforeUpdateWorldTransforms: SkeletonSprite -> Void = function(_) {};
-	public var afterUpdateWorldTransforms: SkeletonSprite -> Void = function(_) {};
+	public var beforeUpdateWorldTransforms:SkeletonSprite->Void = function(_) {};
+	public var afterUpdateWorldTransforms:SkeletonSprite->Void = function(_) {};
+
 	public static var clipper(default, never):SkeletonClipping = new SkeletonClipping();
 
 	public var offsetX = .0;
@@ -93,9 +93,9 @@ class SkeletonSprite extends FlxObject
 	private var _tempPoint = new Point();
 
 	private static var QUAD_INDICES:Array<Int> = [0, 1, 2, 2, 3, 0];
+
 	/** Creates an uninitialized SkeletonSprite. The renderer, skeleton, and animation state must be set before use. */
-	public function new(skeletonData:SkeletonData, animationStateData:AnimationStateData = null)
-	{
+	public function new(skeletonData:SkeletonData, animationStateData:AnimationStateData = null) {
 		super(0, 0);
 		Bone.yDown = true;
 		skeleton = new Skeleton(skeletonData);
@@ -114,30 +114,34 @@ class SkeletonSprite extends FlxObject
 		}
 	}
 
-	public function getAnimationBounds(animation:Animation, clip:Bool = true): lime.math.Rectangle {
+	public function getAnimationBounds(animation:Animation, clip:Bool = true):Rectangle {
 		var clipper = clip ? SkeletonSprite.clipper : null;
 		skeleton.setToSetupPose();
 
 		var steps = 100, time = 0.;
 		var stepTime = animation.duration != 0 ? animation.duration / steps : 0;
-		var minX = 100000000., maxX = -100000000., minY = 100000000., maxY = -100000000.;
+		var minX = 100000000.,
+			maxX = -100000000.,
+			minY = 100000000.,
+			maxY = -100000000.;
 
-		var bounds = new lime.math.Rectangle();
 		for (i in 0...steps) {
-			animation.apply(skeleton, time , time, false, [], 1, MixBlend.setup, MixDirection.mixIn);
+			animation.apply(skeleton, time, time, false, [], 1, MixBlend.setup, MixDirection.mixIn);
 			skeleton.updateWorldTransform(Physics.update);
-			bounds = skeleton.getBounds(clipper);
+			var boundsSkel = skeleton.getBounds(clipper);
 
-			if (!Math.isNaN(bounds.x) && !Math.isNaN(bounds.y) && !Math.isNaN(bounds.width) && !Math.isNaN(bounds.height)) {
-				minX = Math.min(bounds.x, minX);
-				minY = Math.min(bounds.y, minY);
-				maxX = Math.max(bounds.right, maxX);
-				maxY = Math.max(bounds.bottom, maxY);
+			if (!Math.isNaN(boundsSkel.x) && !Math.isNaN(boundsSkel.y) && !Math.isNaN(boundsSkel.width) && !Math.isNaN(boundsSkel.height)) {
+				minX = Math.min(boundsSkel.x, minX);
+				minY = Math.min(boundsSkel.y, minY);
+				maxX = Math.max(boundsSkel.x + boundsSkel.width, maxX);
+				maxY = Math.max(boundsSkel.y + boundsSkel.height, maxY);
 			} else
-				trace("ERROR");
+				throw new SpineException("Animation bounds are invalid: " + animation.name);
 
 			time += stepTime;
 		}
+
+		var bounds = new Rectangle();
 		bounds.x = minX;
 		bounds.y = minY;
 		bounds.width = maxX - minX;
@@ -145,8 +149,7 @@ class SkeletonSprite extends FlxObject
 		return bounds;
 	}
 
-	override public function destroy():Void
-	{
+	override public function destroy():Void {
 		state.clearListeners();
 		state = null;
 		skeleton = null;
@@ -157,15 +160,15 @@ class SkeletonSprite extends FlxObject
 		_tempPoint = null;
 
 		if (_meshes != null) {
-			for (mesh in _meshes) mesh.destroy();
+			for (mesh in _meshes)
+				mesh.destroy();
 			_meshes = null;
 		}
 
 		super.destroy();
 	}
 
-	override public function update(elapsed:Float):Void
-	{
+	override public function update(elapsed:Float):Void {
 		super.update(elapsed);
 		state.update(elapsed);
 		state.apply(skeleton);
@@ -175,14 +178,15 @@ class SkeletonSprite extends FlxObject
 		this.afterUpdateWorldTransforms(this);
 	}
 
-	override public function draw():Void
-	{
-		if (alpha == 0) return;
+	override public function draw():Void {
+		if (alpha == 0)
+			return;
 
 		renderMeshes();
 
 		#if FLX_DEBUG
-		if (FlxG.debugger.drawDebug) drawDebug();
+		if (FlxG.debugger.drawDebug)
+			drawDebug();
 		#end
 	}
 
@@ -244,14 +248,10 @@ class SkeletonSprite extends FlxObject
 			}
 
 			if (mesh != null) {
-
 				// cannot use directly mesh.color.setRGBFloat otherwise the setter won't be called and transfor color not set
-				mesh.color = FlxColor.fromRGBFloat(
-					skeleton.color.r * slot.color.r * attachmentColor.r * color.redFloat,
+				mesh.color = FlxColor.fromRGBFloat(skeleton.color.r * slot.color.r * attachmentColor.r * color.redFloat,
 					skeleton.color.g * slot.color.g * attachmentColor.g * color.greenFloat,
-					skeleton.color.b * slot.color.b * attachmentColor.b * color.blueFloat,
-					1
-				);
+					skeleton.color.b * slot.color.b * attachmentColor.b * color.blueFloat, 1);
 				mesh.alpha = skeleton.color.a * slot.color.a * attachmentColor.a * alpha;
 
 				if (clipper.isClipping()) {
@@ -272,7 +272,7 @@ class SkeletonSprite extends FlxObject
 							_tempPoint = _tempMatrix.transformPoint(_tempPoint);
 							mesh.vertices[i] = _tempPoint.x;
 							mesh.vertices[i + 1] = _tempPoint.y;
-							i+=2;
+							i += 2;
 						}
 					}
 				} else {
@@ -321,7 +321,7 @@ class SkeletonSprite extends FlxObject
 		_tempMatrix.identity();
 		// scale is connected to the skeleton scale - no need to rescale
 		_tempMatrix.scale(1, 1);
-    	_tempMatrix.rotate(angle * Math.PI / 180);
+		_tempMatrix.rotate(angle * Math.PI / 180);
 		_tempMatrix.translate(x + offsetX, y + offsetY);
 		return _tempMatrix;
 	}
@@ -334,10 +334,10 @@ class SkeletonSprite extends FlxObject
 			d = transform.d,
 			tx = transform.tx,
 			ty = transform.ty;
-			var x = point[0];
-			var y = point[1];
-			point[0] = x * a + y * c + tx;
-			point[1] = x * b + y * d + ty;
+		var x = point[0];
+		var y = point[1];
+		point[0] = x * a + y * c + tx;
+		point[1] = x * b + y * d + ty;
 	}
 
 	public function haxeWorldCoordinatesToSkeleton(point:Array<Float>):Void {
@@ -354,7 +354,7 @@ class SkeletonSprite extends FlxObject
 		point[1] = x * b + y * d + ty;
 	}
 
-	public function haxeWorldCoordinatesToBone(point:Array<Float>, bone: Bone):Void {
+	public function haxeWorldCoordinatesToBone(point:Array<Float>, bone:Bone):Void {
 		this.haxeWorldCoordinatesToSkeleton(point);
 		if (bone.parent != null) {
 			bone.parent.worldToLocal(point);
@@ -363,7 +363,7 @@ class SkeletonSprite extends FlxObject
 		}
 	}
 
-	private function getFlixelMeshFromRendererAttachment(region: RenderedAttachment) {
+	private function getFlixelMeshFromRendererAttachment(region:RenderedAttachment) {
 		if (region.rendererObject == null) {
 			var skeletonMesh = new SkeletonMesh();
 			region.rendererObject = skeletonMesh;
@@ -373,15 +373,15 @@ class SkeletonSprite extends FlxObject
 		return region.rendererObject;
 	}
 
-	function set_flipX(value:Bool):Bool
-	{
-		if (value != flipX) skeleton.scaleX = -skeleton.scaleX;
+	function set_flipX(value:Bool):Bool {
+		if (value != flipX)
+			skeleton.scaleX = -skeleton.scaleX;
 		return flipX = value;
 	}
 
-	function set_flipY(value:Bool):Bool
-	{
-		if (value != flipY) skeleton.scaleY = -skeleton.scaleY;
+	function set_flipY(value:Bool):Bool {
+		if (value != flipY)
+			skeleton.scaleY = -skeleton.scaleY;
 		return flipY = value;
 	}
 
@@ -404,7 +404,6 @@ class SkeletonSprite extends FlxObject
 	function set_scaleY(value:Float):Float {
 		return skeleton.scaleY = value;
 	}
-
 }
 
 typedef RenderedAttachment = {

@@ -45,6 +45,9 @@ void SpineSkin::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_attachments"), &SpineSkin::get_attachments);
 	ClassDB::bind_method(D_METHOD("get_bones"), &SpineSkin::get_bones);
 	ClassDB::bind_method(D_METHOD("get_constraints"), &SpineSkin::get_constraints);
+#if VERSION_MAJOR >= 4
+	ClassDB::bind_method(D_METHOD("init", "name", "sprite"), &SpineSkin::init);
+#endif
 }
 
 SpineSkin::SpineSkin() : owns_skin(false) {
@@ -124,7 +127,11 @@ Array SpineSkin::find_attachments_for_slot(int slot_index) {
 String SpineSkin::get_name() {
 	SPINE_CHECK(get_spine_object(), "")
 	String name;
+#if (VERSION_MAJOR >= 4 && VERSION_MINOR >= 5)
+	name = String::utf8(get_spine_object()->getName().buffer());
+#else
 	name.parse_utf8(get_spine_object()->getName().buffer());
+#endif
 	return name;
 }
 

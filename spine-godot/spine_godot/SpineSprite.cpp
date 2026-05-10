@@ -41,7 +41,9 @@
 #include <godot_cpp/variant/array.hpp>
 #include <godot_cpp/classes/mesh.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
+#ifdef TOOLS_ENABLED
 #include <godot_cpp/classes/editor_interface.hpp>
+#endif
 #include <godot_cpp/classes/control.hpp>
 #include <godot_cpp/classes/viewport.hpp>
 #include <godot_cpp/classes/scene_tree.hpp>
@@ -58,9 +60,13 @@
 #include "core/math/transform_2d.h"
 #include "core/variant/array.h"
 #include "scene/resources/mesh.h"
+#if (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
+#include "servers/rendering/rendering_server.h"
+#else
 #include "servers/rendering_server.h"
+#endif
 #include "scene/resources/canvas_item_material.h"
-#if VERSION_MINOR > 0
+#if VERSION_MINOR > 0 && defined(TOOLS_ENABLED)
 #include "editor/editor_interface.h"
 #endif
 #else
@@ -1227,7 +1233,11 @@ void SpineSprite::draw() {
 	Vector<String> hover_text_lines;
 	if (hovered_slot) {
 		String name;
+#if (VERSION_MAJOR >= 4 && VERSION_MINOR >= 5)
+		name = String::utf8(hovered_slot->getData().getName().buffer());
+#else
 		name.parse_utf8(hovered_slot->getData().getName().buffer());
+#endif
 		hover_text_lines.push_back(String("Slot: ") + name);
 	}
 
@@ -1237,7 +1247,11 @@ void SpineSprite::draw() {
 		draw_bone(hovered_bone, Color(debug_bones_color.r, debug_bones_color.g, debug_bones_color.b, 1));
 		debug_bones_thickness = thickness;
 		String name;
+#if (VERSION_MAJOR >= 4 && VERSION_MINOR >= 5)
+		name = String::utf8(hovered_bone->getData().getName().buffer());
+#else
 		name.parse_utf8(hovered_bone->getData().getName().buffer());
+#endif
 		hover_text_lines.push_back(String("Bone: ") + name);
 	}
 

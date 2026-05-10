@@ -25,7 +25,7 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THE SPINE RUNTIMES, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *****************************************************************************/
+*****************************************************************************/
 
 package spine.starling;
 
@@ -33,7 +33,7 @@ import spine.animation.Animation;
 import starling.animation.IAnimatable;
 import openfl.geom.Matrix;
 import openfl.geom.Point;
-import openfl.geom.Rectangle;
+import openfl.geom.Rectangle as OpenFlRectangle;
 import spine.Bone;
 import spine.Skeleton;
 import spine.SkeletonClipping;
@@ -76,8 +76,8 @@ class SkeletonSprite extends DisplayObject implements IAnimatable {
 	private var tempLight:spine.Color = new spine.Color(0, 0, 0);
 	private var tempDark:spine.Color = new spine.Color(0, 0, 0);
 
-	public var beforeUpdateWorldTransforms: SkeletonSprite -> Void = function(_) {};
-	public var afterUpdateWorldTransforms: SkeletonSprite -> Void = function(_) {};
+	public var beforeUpdateWorldTransforms:SkeletonSprite->Void = function(_) {};
+	public var afterUpdateWorldTransforms:SkeletonSprite->Void = function(_) {};
 
 	/** Creates an uninitialized SkeletonSprite. The skeleton and animation state must be set before use. */
 	public function new(skeletonData:SkeletonData, animationStateData:AnimationStateData = null) {
@@ -306,9 +306,9 @@ class SkeletonSprite extends DisplayObject implements IAnimatable {
 		return null;
 	}
 
-	override public function getBounds(targetSpace:DisplayObject, resultRect:Rectangle = null):Rectangle {
+	override public function getBounds(targetSpace:DisplayObject, resultRect:OpenFlRectangle = null):OpenFlRectangle {
 		if (resultRect == null) {
-			resultRect = new Rectangle();
+			resultRect = new OpenFlRectangle();
 		}
 		if (targetSpace == this) {
 			resultRect.setTo(0, 0, 0, 0);
@@ -322,31 +322,39 @@ class SkeletonSprite extends DisplayObject implements IAnimatable {
 		return resultRect;
 	}
 
-	public function getAnimationBounds(animation:Animation, clip:Bool = true): Rectangle {
+	public function getAnimationBounds(animation:Animation, clip:Bool = true):Rectangle {
 		var clipper = clip ? SkeletonSprite.clipper : null;
 		_skeleton.setToSetupPose();
 
 		var steps = 100, time = 0.;
 		var stepTime = animation.duration != 0 ? animation.duration / steps : 0;
-		var minX = 100000000., maxX = -100000000., minY = 100000000., maxY = -100000000.;
+		var minX = 100000000.,
+			maxX = -100000000.,
+			minY = 100000000.,
+			maxY = -100000000.;
 
-		var bound:lime.math.Rectangle;
 		for (i in 0...steps) {
-			animation.apply(_skeleton, time , time, false, [], 1, MixBlend.setup, MixDirection.mixIn);
+			animation.apply(_skeleton, time, time, false, [], 1, MixBlend.setup, MixDirection.mixIn);
 			_skeleton.updateWorldTransform(Physics.update);
-			bound = _skeleton.getBounds(clipper);
+			var boundsSkel = _skeleton.getBounds(clipper);
 
-			if (!Math.isNaN(bound.x) && !Math.isNaN(bound.y) && !Math.isNaN(bound.width) && !Math.isNaN(bound.height)) {
-				minX = Math.min(bound.x, minX);
-				minY = Math.min(bound.y, minY);
-				maxX = Math.max(bound.right, maxX);
-				maxY = Math.max(bound.bottom, maxY);
+			if (!Math.isNaN(boundsSkel.x) && !Math.isNaN(boundsSkel.y) && !Math.isNaN(boundsSkel.width) && !Math.isNaN(boundsSkel.height)) {
+				minX = Math.min(boundsSkel.x, minX);
+				minY = Math.min(boundsSkel.y, minY);
+				maxX = Math.max(boundsSkel.x + boundsSkel.width, maxX);
+				maxY = Math.max(boundsSkel.y + boundsSkel.height, maxY);
 			} else
-				trace("ERROR");
+				throw new SpineException("Animation bounds are invalid: " + animation.name);
 
 			time += stepTime;
 		}
-		return new Rectangle(minX, minY, maxX - minX, maxY - minY);
+
+		var bounds = new Rectangle();
+		bounds.x = minX;
+		bounds.y = minY;
+		bounds.width = maxX - minX;
+		bounds.height = maxY - minY;
+		return bounds;
 	}
 
 	public var skeleton(get, never):Skeleton;
@@ -390,10 +398,10 @@ class SkeletonSprite extends DisplayObject implements IAnimatable {
 			d = transform.d,
 			tx = transform.tx,
 			ty = transform.ty;
-			var x = point[0];
-			var y = point[1];
-			point[0] = x * a + y * c + tx;
-			point[1] = x * b + y * d + ty;
+		var x = point[0];
+		var y = point[1];
+		point[0] = x * a + y * c + tx;
+		point[1] = x * b + y * d + ty;
 	}
 
 	public function haxeWorldCoordinatesToSkeleton(point:Array<Float>):Void {
@@ -410,7 +418,7 @@ class SkeletonSprite extends DisplayObject implements IAnimatable {
 		point[1] = x * b + y * d + ty;
 	}
 
-	public function haxeWorldCoordinatesToBone(point:Array<Float>, bone: Bone):Void {
+	public function haxeWorldCoordinatesToBone(point:Array<Float>, bone:Bone):Void {
 		this.haxeWorldCoordinatesToSkeleton(point);
 		if (bone.parent != null) {
 			bone.parent.worldToLocal(point);
@@ -424,7 +432,8 @@ class SkeletonSprite extends DisplayObject implements IAnimatable {
 			_state.clearListeners();
 			_state = null;
 		}
-		if (_skeleton != null) _skeleton = null;
+		if (_skeleton != null)
+			_skeleton = null;
 		dispatchEventWith(starling.events.Event.REMOVE_FROM_JUGGLER);
 		removeFromParent();
 

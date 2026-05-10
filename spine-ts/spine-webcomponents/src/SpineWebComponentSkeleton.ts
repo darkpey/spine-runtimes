@@ -32,27 +32,27 @@ import {
 	AnimationState,
 	AnimationStateData,
 	AtlasAttachmentLoader,
+	Bone,
 	Disposable,
 	LoadingScreen,
+	MeshAttachment,
 	MixBlend,
 	MixDirection,
+	NumberArrayLike,
 	Physics,
+	RegionAttachment,
+	Skeleton,
 	SkeletonBinary,
 	SkeletonData,
 	SkeletonJson,
-	Skeleton,
-	TextureAtlas,
-	Vector2,
-	Utils,
-	NumberArrayLike,
-	Slot,
-	RegionAttachment,
-	MeshAttachment,
-	Bone,
 	Skin,
+	Slot,
+	TextureAtlas,
+	Utils,
+	Vector2,
 } from "@esotericsoftware/spine-webgl";
-import { AttributeTypes, castValue, isBase64, Rectangle } from "./wcUtils.js";
 import { SpineWebComponentOverlay } from "./SpineWebComponentOverlay.js";
+import { AttributeTypes, castValue, isBase64, Rectangle } from "./wcUtils.js";
 
 type UpdateSpineWidgetFunction = (delta: number, skeleton: Skeleton, state: AnimationState) => void;
 
@@ -1293,24 +1293,26 @@ export class SpineWebComponentSkeleton extends HTMLElement implements Disposable
 			skeleton.updateWorldTransform(Physics.update);
 			skeleton.getBounds(offset, size, tempArray, renderer.skeletonRenderer.getSkeletonClipping());
 
-			if (!isNaN(offset.x) && !isNaN(offset.y) && !isNaN(size.x) && !isNaN(size.y) &&
-				!isNaN(minX) && !isNaN(minY) && !isNaN(maxX) && !isNaN(maxY)) {
+			if (Number.isFinite(offset.x) && Number.isFinite(offset.y) && Number.isFinite(size.x) && Number.isFinite(size.y)) {
 				minX = Math.min(offset.x, minX);
 				maxX = Math.max(offset.x + size.x, maxX);
 				minY = Math.min(offset.y, minY);
 				maxY = Math.max(offset.y + size.y, maxY);
-			} else {
-				return { x: 0, y: 0, width: -1, height: -1 };
 			}
 		}
 
 		skeleton.setToSetupPose();
 
+		const width = maxX - minX;
+		const height = maxY - minY;
+		if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0)
+			return { x: 0, y: 0, width: -1, height: -1 };
+
 		return {
 			x: minX,
 			y: minY,
-			width: maxX - minX,
-			height: maxY - minY,
+			width: width,
+			height: height,
 		}
 	}
 
@@ -1318,7 +1320,6 @@ export class SpineWebComponentSkeleton extends HTMLElement implements Disposable
 		const { assetManager } = this.overlay;
 		if (this.lastAtlasPath) assetManager.disposeAsset(this.lastAtlasPath);
 		if (this.lastSkelPath) assetManager.disposeAsset(this.lastSkelPath);
-		for (const texturePath of this.lastTexturePaths) assetManager.disposeAsset(texturePath);
 	}
 
 }
