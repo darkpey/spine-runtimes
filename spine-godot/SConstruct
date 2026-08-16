@@ -81,13 +81,14 @@ if env["platform"] == "android":
         "-fdata-sections",
         "-fvisibility=hidden",
         "-fvisibility-inlines-hidden",
-        "-flto=thin"
+        "-flto=thin",
     ])
 
+    # Do not strip at link time; keep BuildId for crash matching
     env.Append(LINKFLAGS=[
         "-Wl,--gc-sections",
-        "-Wl,--strip-all",
-        "-flto=thin"
+        "-Wl,--build-id=sha1",
+        "-flto=thin",
     ])
 
 # Set iOS minimum deployment target
@@ -151,6 +152,17 @@ library = env.SharedLibrary(
     libraryfile,
     source=sources,
 )
+
+if env["platform"] == "android":
+    def keep_symbols_then_strip(target, source, env):
+        import shutil
+        so = str(target[0])
+        dbg = so + ".dbg"
+        shutil.copy2(so, dbg)
+        strip = env.get("STRIP", "llvm-strip")
+        env.Execute(f'"{strip}" --strip-all "{so}"')
+
+    env.AddPostAction(library, keep_symbols_then_strip)
 
 if env["platform"] == "macos" or env["platform"] == "ios":
     plist_subst = {
